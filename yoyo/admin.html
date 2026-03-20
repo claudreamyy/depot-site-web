@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Supply - Administration</title>
+    
+    <!-- Polices -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --sidebar-bg: #1a1a1a;
+            --accent: #d4af37;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --text-main: #1a1a1a;
+            --text-muted: #666;
+            --glass: rgba(255, 255, 255, 0.7);
+            --border: rgba(0,0,0,0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            color: white;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links { list-style: none; flex-grow: 1; }
+        .nav-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #ccc;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--accent);
+        }
+        .nav-item i { width: 20px; height: 20px; }
+
+        /* --- MAIN CONTENT --- */
+        .main {
+            flex-grow: 1;
+            margin-left: 260px;
+            padding: 2rem 3rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 { font-family: 'Playfair Display', serif; font-size: 2rem; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            border: 1px solid var(--border);
+        }
+        .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 1.8rem; font-weight: 600; margin-top: 5px; color: var(--text-main); }
+
+        /* --- TABLES --- */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th { text-align: left; padding: 1rem; border-bottom: 2px solid var(--bg-color); color: var(--text-muted); font-size: 0.9rem; font-weight: 600; }
+        td { padding: 1.2rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-new { background: #e3f2fd; color: #1976d2; }
+        .status-processing { background: #fff3e0; color: #f57c00; }
+        .status-completed { background: #e8f5e9; color: #2e7d32; }
+
+        .btn-action {
+            background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 5px; transition: color 0.3s;
+        }
+        .btn-action:hover { color: var(--accent); }
+
+        /* --- MODALS --- */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(5px);
+            z-index: 1000; display: none; justify-content: center; align-items: center;
+        }
+        .modal {
+            background: white; width: 90%; max-width: 500px; padding: 2rem; border-radius: 24px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+        }
+        .overlay.active { display: flex; }
+
+        .input-group { margin-bottom: 1.2rem; }
+        .input-group label { display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-muted); font-weight: 600; }
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-family: inherit; font-size: 1rem;
+        }
+        .btn-submit {
+            width: 100%; padding: 12px; background: var(--sidebar-bg); color: white; border: none; border-radius: 12px;
+            cursor: pointer; font-weight: 600; transition: transform 0.2s;
+        }
+        .btn-submit:hover { transform: translateY(-2px); background: #333; }
+
+        /* --- SETTINGS --- */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 80px; padding: 1.5rem 0.5rem; align-items: center; }
+            .brand span, .nav-item span { display: none; }
+            .main { margin-left: 80px; padding: 1.5rem; }
+            .settings-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="brand">
+            <i data-lucide="shield-check"></i>
+            <span>Elite Admin</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active" onclick="showSection('dashboard', this)">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Tableau de bord</span>
+            </li>
+            <li class="nav-item" onclick="showSection('orders', this)">
+                <i data-lucide="shopping-bag"></i>
+                <span>Commandes</span>
+            </li>
+            <li class="nav-item" onclick="showSection('inventory', this)">
+                <i data-lucide="package"></i>
+                <span>Inventaire</span>
+            </li>
+            <li class="nav-item" onclick="showSection('settings', this)">
+                <i data-lucide="settings"></i>
+                <span>Paramètres</span>
+            </li>
+        </ul>
+        <div class="nav-item" style="color: var(--danger);" onclick="window.location.href='index.html'">
+            <i data-lucide="log-out"></i>
+            <span>Quitter l'Admin</span>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header>
+            <h1 id="section-title">Tableau de Bord</h1>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <span style="font-size: 0.9rem; color: var(--text-muted);">Admin Connecté</span>
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: white;">A</div>
+            </div>
+        </header>
+
+        <!-- DASHBOARD SECTION -->
+        <section id="dashboard-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Ventes Totales</div>
+                    <div class="stat-value" id="total-sales">0.00€</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Commandes</div>
+                    <div class="stat-value" id="total-orders">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Panier Moyen</div>
+                    <div class="stat-value" id="avg-order">0.00€</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Urgence Moyenne</div>
+                    <div class="stat-value" id="avg-urgency">24h</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Commandes Récentes</h3>
+                <div style="overflow-x: auto;">
+                    <table id="recent-orders-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Client (Tél)</th>
+                                <th>Total</th>
+                                <th>Délai</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JS Inject -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ORDERS SECTION -->
+        <section id="orders-section" style="display: none;">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
+                    <h3>Toutes les Commandes</h3>
+                    <input type="text" placeholder="Rechercher..." style="padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd;">
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="all-orders-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Client</th>
+                                <th>Articles</th>
+                                <th>Date Liv.</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JS Inject -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- INVENTORY SECTION -->
+        <section id="inventory-section" style="display: none;">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+                    <h3>Gestion du Stock</h3>
+                    <button class="btn-submit" style="width: auto; padding: 8px 20px;" onclick="openProductModal()">+ Ajouter un produit</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Prix Unit.</th>
+                                <th>Catégorie</th>
+                                <th>Stock</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JS Inject -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS SECTION -->
+        <section id="settings-section" style="display: none;">
+            <div class="settings-grid">
+                <div class="card">
+                    <h3>Tarification & Remises</h3>
+                    <div class="input-group" style="margin-top: 1.5rem;">
+                        <label>Remise Maximale (%)</label>
+                        <input type="number" id="setting-max-discount" value="30">
+                    </div>
+                    <div class="input-group">
+                        <label>Seuil Remise Max (Unités)</label>
+                        <input type="number" id="setting-discount-threshold" value="100">
+                    </div>
+                    <div class="input-group">
+                        <label>Frais Urgence (€/heure gagnée)</label>
+                        <input type="number" id="setting-express-fee" value="5">
+                    </div>
+                    <button class="btn-submit" onclick="saveSettings()">Enregistrer les paramètres</button>
+                </div>
+
+                <div class="card">
+                    <h3>Promotions</h3>
+                    <div class="input-group" style="margin-top: 1.5rem;">
+                        <label>Code Promo Flash</label>
+                        <input type="text" id="setting-promo-code" value="PROMO1">
+                    </div>
+                    <div class="input-group">
+                        <label>Valeur de la promotion (%)</label>
+                        <input type="number" id="setting-promo-value" value="1">
+                    </div>
+                    <button class="btn-submit" onclick="saveSettings()">Mettre à jour la promo</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- PRODUCT MODAL -->
+    <div class="overlay" id="product-overlay">
+        <div class="modal">
+            <h2 id="modal-title" style="margin-bottom: 1.5rem;">Ajouter un Produit</h2>
+            <form id="product-form" onsubmit="handleProductSubmit(event)">
+                <input type="hidden" id="prod-id">
+                <div class="input-group">
+                    <label>Nom du Produit</label>
+                    <input type="text" id="prod-name" required>
+                </div>
+                <div class="input-group">
+                    <label>Prix Unitaire (€)</label>
+                    <input type="number" step="0.01" id="prod-price" required>
+                </div>
+                <div class="input-group">
+                    <label>URL de l'image</label>
+                    <input type="url" id="prod-img" placeholder="https://unsplash.com/...">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-submit" style="background: #ccc;" onclick="closeModal()">Annuler</button>
+                    <button type="submit" class="btn-submit" id="btn-save-prod">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadDashboard();
+            initInventory();
+            loadSettings();
+        });
+
+        const sections = ['dashboard', 'orders', 'inventory', 'settings'];
+
+        function showSection(id, element) {
+            sections.forEach(s => document.getElementById(s + '-section').style.display = 'none');
+            document.getElementById(id + '-section').style.display = 'block';
+            
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            element.classList.add('active');
+            
+            document.getElementById('section-title').innerText = element.querySelector('span').innerText;
+
+            if(id === 'dashboard') loadDashboard();
+            if(id === 'orders') loadOrders();
+            if(id === 'inventory') renderInventory();
+        }
+
+        // --- DASHBOARD ---
+        function loadDashboard() {
+            const orders = JSON.parse(localStorage.getItem('elite_orders') || '[]');
+            const totalSales = orders.reduce((sum, o) => sum + parseFloat(o.total.replace('€', '')), 0);
+            
+            document.getElementById('total-sales').innerText = totalSales.toFixed(2) + "€";
+            document.getElementById('total-orders').innerText = orders.length;
+            document.getElementById('avg-order').innerText = (orders.length ? (totalSales / orders.length) : 0).toFixed(2) + "€";
+            
+            const recent = orders.slice(-5).reverse();
+            const tbody = document.getElementById('recent-orders-table').querySelector('tbody');
+            tbody.innerHTML = recent.map(o => `
+                <tr>
+                    <td>${new Date(o.timestamp).toLocaleDateString()}</td>
+                    <td>${o.phone}</td>
+                    <td>${o.total}</td>
+                    <td>${o.urgency}</td>
+                    <td><span class="status-pill status-${o.status.toLowerCase()}">${o.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // --- ORDERS ---
+        function loadOrders() {
+            const orders = JSON.parse(localStorage.getItem('elite_orders') || '[]');
+            const tbody = document.getElementById('all-orders-table').querySelector('tbody');
+            tbody.innerHTML = orders.reverse().map(o => `
+                <tr>
+                    <td>#${o.id.toString().slice(-6)}</td>
+                    <td>${o.phone}</td>
+                    <td>${o.items.length} articles</td>
+                    <td>${o.date}</td>
+                    <td style="font-weight:700; color:var(--accent);">${o.total}</td>
+                    <td>
+                        <button class="btn-action" onclick="updateOrderStatus(${o.id}, 'Processing')"><i data-lucide="clock"></i></button>
+                        <button class="btn-action" onclick="updateOrderStatus(${o.id}, 'Completed')"><i data-lucide="check-circle-2"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function updateOrderStatus(id, status) {
+            let orders = JSON.parse(localStorage.getItem('elite_orders') || '[]');
+            const idx = orders.findIndex(o => o.id === id);
+            if(idx !== -1) {
+                orders[idx].status = status;
+                localStorage.setItem('elite_orders', JSON.stringify(orders));
+                loadOrders();
+            }
+        }
+
+        // --- INVENTORY (CRUD) ---
+        const defaultProducts = [
+            { id: 1, name: "Champagne Grand Cru", price: 45.00, img: "https://images.unsplash.com/photo-1598155523122-38423bb4d6c1?q=80&w=800&auto=format&fit=crop" },
+            { id: 2, name: "Vodka Premium 1L", price: 32.00, img: "https://images.unsplash.com/photo-1610444580875-01e457597117?q=80&w=800&auto=format&fit=crop" },
+            { id: 3, name: "Eau Minérale (Pack 24)", price: 12.00, img: "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?q=80&w=800&auto=format&fit=crop" },
+            { id: 4, name: "Whisky 12 Ans", price: 55.00, img: "https://images.unsplash.com/photo-1527281400683-1aae777175f8?q=80&w=800&auto=format&fit=crop" },
+            { id: 5, name: "Sodas Artisanaux (Pack 12)", price: 18.00, img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=800&auto=format&fit=crop" },
+            { id: 6, name: "Gin Botanique", price: 38.00, img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=800&auto=format&fit=crop" }
+        ];
+
+        function initInventory() {
+            if(!localStorage.getItem('elite_products')) {
+                localStorage.setItem('elite_products', JSON.stringify(defaultProducts));
+            }
+        }
+
+        function renderInventory() {
+            const products = JSON.parse(localStorage.getItem('elite_products') || '[]');
+            const tbody = document.getElementById('inventory-table').querySelector('tbody');
+            tbody.innerHTML = products.map(p => `
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${p.img}" style="width:30px; height:30px; border-radius:5px; object-fit:cover;">
+                            ${p.name}
+                        </div>
+                    </td>
+                    <td>${parseFloat(p.price).toFixed(2)}€</td>
+                    <td>Boissons</td>
+                    <td><span style="color:var(--success)">En Stock</span></td>
+                    <td>
+                        <button class="btn-action" onclick="openProductModal(${p.id})"><i data-lucide="edit"></i></button>
+                        <button class="btn-action" style="color:var(--danger)" onclick="deleteProduct(${p.id})"><i data-lucide="trash-2"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function openProductModal(id = null) {
+            document.getElementById('product-overlay').classList.add('active');
+            if(id) {
+                const products = JSON.parse(localStorage.getItem('elite_products') || '[]');
+                const p = products.find(prod => prod.id === id);
+                document.getElementById('modal-title').innerText = "Modifier le Produit";
+                document.getElementById('prod-id').value = p.id;
+                document.getElementById('prod-name').value = p.name;
+                document.getElementById('prod-price').value = p.price;
+                document.getElementById('prod-img').value = p.img;
+                document.getElementById('btn-save-prod').innerText = "Mettre à jour";
+            } else {
+                document.getElementById('modal-title').innerText = "Ajouter un Produit";
+                document.getElementById('product-form').reset();
+                document.getElementById('prod-id').value = '';
+                document.getElementById('btn-save-prod').innerText = "Ajouter";
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('product-overlay').classList.remove('active');
+        }
+
+        function handleProductSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('prod-id').value;
+            const name = document.getElementById('prod-name').value;
+            const price = document.getElementById('prod-price').value;
+            const img = document.getElementById('prod-img').value || 'https://via.placeholder.com/150';
+            
+            let products = JSON.parse(localStorage.getItem('elite_products') || '[]');
+            
+            if(id) {
+                const idx = products.findIndex(p => p.id == id);
+                products[idx] = { ...products[idx], name, price, img };
+            } else {
+                products.push({ id: Date.now(), name, price: parseFloat(price), img });
+            }
+            
+            localStorage.setItem('elite_products', JSON.stringify(products));
+            closeModal();
+            renderInventory();
+        }
+
+        function deleteProduct(id) {
+            if(confirm('Supprimer ce produit ?')) {
+                let products = JSON.parse(localStorage.getItem('elite_products') || '[]');
+                products = products.filter(p => p.id !== id);
+                localStorage.setItem('elite_products', JSON.stringify(products));
+                renderInventory();
+            }
+        }
+
+        // --- SETTINGS ---
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('elite_settings') || '{}');
+            if(settings.maxDiscount) document.getElementById('setting-max-discount').value = settings.maxDiscount;
+            if(settings.discountThreshold) document.getElementById('setting-discount-threshold').value = settings.discountThreshold;
+            if(settings.expressFee) document.getElementById('setting-express-fee').value = settings.expressFee;
+            if(settings.promoCode) document.getElementById('setting-promo-code').value = settings.promoCode;
+            if(settings.promoValue) document.getElementById('setting-promo-value').value = settings.promoValue;
+        }
+
+        function saveSettings() {
+            const settings = {
+                maxDiscount: document.getElementById('setting-max-discount').value,
+                discountThreshold: document.getElementById('setting-discount-threshold').value,
+                expressFee: document.getElementById('setting-express-fee').value,
+                promoCode: document.getElementById('setting-promo-code').value,
+                promoValue: document.getElementById('setting-promo-value').value
+            };
+            localStorage.setItem('elite_settings', JSON.stringify(settings));
+            alert('Paramètres enregistrés avec succès !');
+        }
+
+    </script>
+</body>
+</html>
